@@ -1,0 +1,7 @@
+// the code can be used to to find and replace data from a list in a table that has unclean data
+
+= List.Accumulate(
+    {0..List.Count(Channel_Name_Cleaning[Channel Name Unclean])-1}, // Power query starts from 0
+    #"Changed Type",
+    (state,current) =>  Table.ReplaceValue(state,Channel_Name_Cleaning[Channel Name Unclean]{current},Channel_Name_Cleaning[Channel Name Clean]{current},Replacer.ReplaceValue,{"Channel Name"})
+)
