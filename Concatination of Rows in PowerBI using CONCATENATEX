@@ -1,0 +1,71 @@
+--- following code is to concatinate several rows and show whicjh of the metrics are present and which are not-----
+
+Platforms_With_Metric_Not_Present = 
+--- Finding the last available month---
+VAR LastMonth =
+    CALCULATE(
+        MAX('Combined OTT'[Date]), 
+        ALL('Combined OTT')
+    )
+
+-- Summarizing the Table to find which platforms have not reported their metric--
+VAR MPN_Table =    SUMMARIZE(
+        FILTER(
+            'Combined OTT',
+            MONTH('Combined OTT'[Date]) = MONTH(LastMonth) &&
+            YEAR('Combined OTT'[Date]) = YEAR(LastMonth)
+        ),
+        'Combined OTT'[Platform],
+        "Metric_Present_Not",
+        IF(
+            OR(
+                ISBLANK(CALCULATE([Selected Metric of Calculation], 
+                    FILTER('Combined OTT', 
+                        MONTH('Combined OTT'[Date]) = MONTH(LastMonth) && 
+                        YEAR('Combined OTT'[Date]) = YEAR(LastMonth)
+                    )
+                )), 
+                CALCULATE([Selected Metric of Calculation], 
+                    FILTER('Combined OTT', 
+                        MONTH('Combined OTT'[Date]) = MONTH(LastMonth) && 
+                        YEAR('Combined OTT'[Date]) = YEAR(LastMonth)
+                    )
+                ) <= 0
+            ), 
+            "Not Present", 
+            "Present"
+        )
+    )
+
+-- Filtering out all the platforms whose metric is not Present---
+VAR NotPresentPlatforms = 
+    FILTER(
+        MPN_Table,
+       [Metric_Present_Not] = "Not Present"
+    )
+--- Removing the duplication of Names of Platforms ---- 
+VAR DistinctNotPresentPlatforms = 
+    DISTINCT(
+        SELECTCOLUMNS(
+            NotPresentPlatforms, 
+            'Combined OTT'[Platform]
+        )
+    )
+
+--- Concatinating them in a single line---
+VAR NotPresentList = 
+    CONCATENATEX(
+        DistinctNotPresentPlatforms, 
+        'Combined OTT'[Platform], 
+        " , ", 
+        'Combined OTT'[Platform], 
+        ASC
+    )
+
+--- Returing the missing platforms in a text format---
+RETURN
+    IF(
+        LEN(NotPresentList) = 0,
+        "All platforms have " & [Selection by User]  & " present.",
+        NotPresentList & " are the platforms whose " & [Selection by User]  & " is not available for " & FORMAT ( MAX ( 'Combined OTT'[Date] ), "MMM-YYYY" )
+    )
