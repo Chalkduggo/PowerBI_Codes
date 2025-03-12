@@ -1,0 +1,55 @@
+if Date column fails to load "MM-DD-YYYY"
+then check the following process
+You're trying to create a text date in MM-DD-YYYY format and then convert it into a real Date in Power Query — but you're seeing [DataFormat.Error] when parsing the text into a Date.
+
+Let’s fix it step-by-step, properly and cleanly. 🔧
+
+✅ Step 1: Build a Text Date Column (MM-DD-YYYY)
+Go to "Add Column" → "Custom Column", and paste this code:
+
+powerquery
+
+Text.PadStart(Text.From([Month]), 2, "0") & "-" &
+Text.PadStart(Text.From([Day]), 2, "0") & "-" &
+Text.From([Year])
+This will create a text column, say TextDate, in the format: MM-DD-YYYY.
+
+✅ Step 2: Convert the TextDate column to Date Format
+Click on the "ABC123" icon on the column header.
+Choose Data Type → Date.
+If Power Query still gives you [DataFormat.Error], it means your system locale is not recognizing MM-DD-YYYY format.
+✅ Step 3 (Best Fix): Use Date.FromText with US Culture explicitly
+Instead of changing column type manually, use this code in a custom column to parse it properly:
+
+powerquery
+
+= Date.FromText(
+    Text.PadStart(Text.From([Month]), 2, "0") & "-" &
+    Text.PadStart(Text.From([Day]), 2, "0") & "-" &
+    Text.From([Year]),
+    "en-US"
+)
+Or even better (explicit with locale):
+
+powerquery
+
+= Date.FromText(
+    Text.PadStart(Text.From([Month]), 2, "0") & "-" &
+    Text.PadStart(Text.From([Day]), 2, "0") & "-" &
+    Text.From([Year])
+, [Format="en-US"])
+☑ Why this works: en-US culture understands MM-DD-YYYY format.
+
+🔥 Alternative: Use #date() directly (No parsing needed!)
+powerquery
+
+= #date([Year], [Month], [Day])
+➡ This avoids building a text string, and directly constructs a date from parts — safest and most recommended.
+
+📌 Final Recommendation:
+If your source has Month, Day, and Year in separate columns, just do:
+
+powerquery
+
+= #date([Year], [Month], [Day])
+→ This never fails unless the date is invalid (like Feb 30).
